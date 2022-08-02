@@ -1,12 +1,12 @@
 {
-	"name": "Abu-MD",
+	"name": "Bilie",
 	"description": "Whatsapp Multi Version Abu Bot.",
 	"logo": "https://i.imgur.com/OseHc3b.jpg",
 	"keywords": [
 		"whatsapp",
 		"bot"
 	],
-	"repository": "https://github.com/Afx-Abu/Abu-MD",
+	"repository": "https://github.com/Afx-Abu/Bilie",
 	"stack": "container",
     "env": { 
         "HANDLERS": {
