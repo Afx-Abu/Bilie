@@ -1,14 +1,14 @@
 {
-  "name": "Abu-MD", 
+  "name": "Bilie", 
   "version": "2.0.1",
-  "description": "Abu whatsapp bot- Multi device version.",
-  "main": "./Abu-MD/index.js",
+  "description": "Bilie whatsapp bot- Multi device version.",
+  "main": "./Bilie/index.js",
   "scripts": {
     "start": "supervisor -s index.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Afx-Abu/Abu-MD.git"
+    "url": "git+https://github.com/Afx-Abu/Bilie.git"
   },
   "keywords": [
     "whatsapp",
@@ -19,9 +19,9 @@
   "developer": "@Afx-Abu",
   "license": "GPL-3.0-or-later",
   "bugs": {
-    "url": "https://github.com/Afx-Abu/Abu-MD/issues"
+    "url": "https://github.com/Afx-Abu/Bilie/issues"
   },
-  "homepage": "https://github.com/Afx-Abu/Abu-MD#readme",
+  "homepage": "https://github.com/Afx-Abu/Bilie#readme",
   "dependencies": {
     "@adiwajshing/baileys": "4.1.0",
     "@adiwajshing/keyed-db":"0.2.4",
