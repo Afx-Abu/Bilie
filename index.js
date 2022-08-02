@@ -3,11 +3,25 @@ const path = require("path");
 const utils = require("./utils");
 const chalk = require('chalk');
 const config = require('./config');
-const { default: WAConnection, useSingleFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore } = require("@adiwajshing/baileys")
-const { state, saveState } = useSingleFileAuthState(`./qr.json`)
+const { 
+   default: WAConnection,
+   useSingleFileAuthState,
+   DisconnectReason,
+   fetchLatestBaileysVersion,
+   makeInMemoryStore
+} = require("@adiwajshing/baileys")
+const {
+   state,
+   saveState
+} = useSingleFileAuthState(`./qr.json`)
 const pino = require('pino')
 const { Boom } = require('@hapi/boom')
-const {Message, Image, Video} = require('./lib/');
+const {
+   Message,
+    Image,
+    Video,
+    String
+} = require('./lib/');
 const { DataTypes } = require('sequelize');
 const axios = require('axios');
 const got = require('got');
