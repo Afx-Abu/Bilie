@@ -1,16 +1,16 @@
-const fs = require("fs");
-const path = require("path");
-const utils = require("./utils");
-const chalk = require('chalk');
-const config = require('./config');
-const pino = require('pino')
+const { fs } = require("fs");
+const { path } = require("path");
+const { utils } = require("./utils");
+const { chalk } = require('chalk');
+const { config } = require('./config');
+const { pino } = require('pino')
 const { Boom } = require('@hapi/boom')
 const { default: WAConnection, useSingleFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore } = require("@adiwajshing/baileys")
 const { state, saveState } = useSingleFileAuthState(`./qr.json`)
 const { Message, Image, Video, String } = require('./lib/');
 const { DataTypes } = require('sequelize');
-const axios = require('axios');
-const got = require('got');
+const { axios } = require('axios');
+const { got } = require('got');
 
 let { getString } = require('./lib/lang');
 let Lang = getString('updater');
