@@ -3,21 +3,19 @@ const path = require("path");
 const utils = require("./utils");
 const chalk = require('chalk');
 const config = require('./config');
-const { 
-   default: WAConnection,
-   useSingleFileAuthState,
-   DisconnectReason,
-   fetchLatestBaileysVersion,
-   makeInMemoryStore
-} = require("@adiwajshing/baileys")
-const {
-   state,
-   saveState
-} = useSingleFileAuthState(`./qr.json`)
 const pino = require('pino')
 const { Boom } = require('@hapi/boom')
-const {
-   Message,
+const { 
+    default: WAConnection,
+    useSingleFileAuthState,
+    DisconnectReason,
+    fetchLatestBaileysVersion,
+    makeInMemoryStore
+} = require("@adiwajshing/baileys")
+    state,
+    saveState
+} = useSingleFileAuthState(`./qr.json`)
+    Message,
     Image,
     Video,
     String
