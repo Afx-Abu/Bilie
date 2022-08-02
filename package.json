@@ -34,8 +34,8 @@
     "node-cron": "3.0.1",
     "async-g-i-s": "1.0.0",
     "sequelize": "^6.13.0",
+    "raganork-bot": "2.0.7",
     "sqlite3": "^5.0.0",
     "supervisor": "^0.12.0"
-    "raganork-bot": "2.0.7",
      }
 }
