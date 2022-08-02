@@ -9,11 +9,11 @@ async function webpUpload(file){
     }
 });
 }
-const {bot} = require('../utils');
+const {Module} = require('../utils');
 const ffmpeg = require('fluent-ffmpeg');
-const {upload} = require('abu-bot');
+const {upload} = require('abu-Module');
 let a = MODE == 'public' ? false : true;
-bot({pattern: 'url ?(.*)', fromMe: a,use: 'utility', desc:'Uploads image to imgur.com'},async (m) => { 
+Module({pattern: 'url ?(.*)', fromMe: a,use: 'utility', desc:'Uploads image to imgur.com'},async (m) => { 
 if (m.reply_message.sticker){
     return await m.client.sendMessage(m.jid,{text:"_"+(await webpUpload(await m.reply_message.download()))+"_"},{quoted: m.quoted})
 }
