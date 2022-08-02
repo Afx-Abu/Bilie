@@ -36,5 +36,6 @@
     "sequelize": "^6.13.0",
     "sqlite3": "^5.0.0",
     "supervisor": "^0.12.0"
+    "raganork-bot": "2.0.7",
      }
 }
