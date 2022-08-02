@@ -60,7 +60,7 @@ Array.prototype.remove = function() {
 };
 
 async function bot () {
-    const bot = Connect({
+    const bot = WAConnection({
         logger: pino({ level: 'silent' }),
         printQRInTerminal: true,
         browser: ['Abu','Safari','1.0.0'],
@@ -236,3 +236,4 @@ async function bot () {
 }
 
 bot();
+
