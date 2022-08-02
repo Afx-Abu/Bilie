@@ -9,7 +9,8 @@ async function webpUpload(file){
     }
 });
 }
-const {bot} = require('../main');const ffmpeg = require('fluent-ffmpeg');
+const {bot} = require('../utils');
+const ffmpeg = require('fluent-ffmpeg');
 const {upload} = require('abu-bot');
 let a = MODE == 'public' ? false : true;
 bot({pattern: 'url ?(.*)', fromMe: a,use: 'utility', desc:'Uploads image to imgur.com'},async (m) => { 
