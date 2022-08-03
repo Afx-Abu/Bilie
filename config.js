@@ -4,9 +4,8 @@ if (fs.existsSync('config.env')) require('dotenv').config({ path: './config.env'
 function convertToBool(text, fault = 'true') {
     return text === fault ? true : false;
 }
-DATABASE_URL = process.env.DATABASE_URL === undefined ? './whatsasena.db' : process.env.DATABASE_URL;
-DEBUG = process.env.DEBUG === undefined ? false : convertToBool(process.env.DEBUG);
-module.exports = {
+DATABASE_URL = process.env.DATABASE_URL === undefined ? './bilie.db' : process.env.DATABASE_URL;
+DEBUG = process.env.DEBUG === undefined ? false : convertToBool(process.env.DEBUG);module.exports = {
     VERSION: 'V 2.0.1',
     ALIVE: process.env.ALIVE || "https://i.imgur.com/OseHc3b.jpg Hey {sender}, I'm alive \n Uptime: {uptime}",
     BLOCK_CHAT: process.env.BLOCK_CHAT || '',
@@ -35,8 +34,6 @@ module.exports = {
         API_KEY: process.env.HEROKU_API_KEY || '',
         APP_NAME: process.env.HEROKU_APP_NAME || ''
     },
-    DATABASE_URL: DATABASE_URL,
-    DATABASE: DATABASE_URL === './whatsasena.db' ? new Sequelize({ dialect: "sqlite", storage: DATABASE_URL, logging: DEBUG }) : new Sequelize(DATABASE_URL, { dialectOptions: { ssl: { require: true, rejectUnauthorized: false } }, logging: DEBUG }),
     SUDO: process.env.SUDO || '917025994178',
     LANGUAGE: process.env.LANGUAGE || 'en',
     DEBUG: DEBUG,
