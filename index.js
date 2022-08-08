@@ -9,7 +9,7 @@ const pino = require ('pino');
 const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) }) 
 const fs = require("fs");
 const path = require("path");
-const events = require("./utilsl");
+const events = require("./utils");
 const {Message, Image, Video} = require('./lib/');
 const { DataTypes } = require('sequelize');
 const { GreetingsDB, getMessage } = require("./plugins/sql/greetings");
@@ -49,7 +49,26 @@ const startSock = async () => {
      await config.DATABASE.sync();
      console.log('DB syncing');
      console.log('Wa-Bot Connecting to whatsapp');
+     
+  sock.ev.on('connection.update', async(update) => {
+        const { connection, lastDisconnect } = update     
+        if (connection !== "close") return
 
+        let reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
+
+        const DR = DisconnectReason
+
+        if (reason === DR.badSession) { console.log(`Corrupted section. Delete old session and scan the QR code.`); sock.logout(); return }
+        if (reason === DR.connectionClosed) { console.log("Connection closed. Reconnecting..."); startSock(); return }
+        if (reason === DR.connectionLost) { console.log("Lost connection to the server. Trying to reconnect..."); startSock(); return }
+        if (reason === DR.connectionReplaced) { console.log("Current session replaced by the new one opened. Please close this session first."); sock.logout(); return }
+        if (reason === DR.loggedOut) { console.log(`Session terminated by cell phone. Delete session and scan the QR code.`); sock.logout(); return }
+        if (reason === DR.restartRequired) { console.log("Kingdom needed. restarting..."); startSock(); return }
+        if (reason === DR.timedOut) { console.log("Connection timed out, Reconnecting..."); startSock(); return }
+       })
+        sock.end(`Disconnected: ${reason}|${lastDisconnect.error}`)
+    sock.ev.on('creds.update', saveState)
+    
     const { version } = await fetchLatestBaileysVersion()
     const sock = makeWASocket({ logger, version, printQRInTerminal: false, auth: state })
     console.log('Bot connected.✅️ To Whatsapp...');
@@ -172,24 +191,6 @@ const startSock = async () => {
                        }
                   }
               }
-         )
-       sock.ev.on('connection.update', async(update) => {
-        const { connection, lastDisconnect } = update     
-        if (connection !== "close") return
-
-        let reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
-
-        const DR = DisconnectReason
-
-        if (reason === DR.badSession) { console.log(`Corrupted section. Delete old session and scan the QR code.`); sock.logout(); return }
-        if (reason === DR.connectionClosed) { console.log("Connection closed. Reconnecting..."); startSock(); return }
-        if (reason === DR.connectionLost) { console.log("Lost connection to the server. Trying to reconnect..."); startSock(); return }
-        if (reason === DR.connectionReplaced) { console.log("Current session replaced by the new one opened. Please close this session first."); sock.logout(); return }
-        if (reason === DR.loggedOut) { console.log(`Session terminated by cell phone. Delete session and scan the QR code.`); sock.logout(); return }
-        if (reason === DR.restartRequired) { console.log("Kingdom needed. restarting..."); startSock(); return }
-        if (reason === DR.timedOut) { console.log("Connection timed out, Reconnecting..."); startSock(); return }
-       })
-        sock.end(`Disconnected: ${reason}|${lastDisconnect.error}`)
-    sock.ev.on('creds.update', saveState)
+         )     
 })
 startSock()
