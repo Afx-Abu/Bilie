@@ -1,21 +1,19 @@
-const { fs } = require("fs");
-const { path } = require("path");
-const { utils } = require("./utils");
-const { chalk } = require('chalk');
-const { config } = require('./config');
-const { pino  }= require('pino')
-const { Boom } = require('@hapi/boom')
-const { default: WAConnection, useSingleFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore } = require("@adiwajshing/baileys")
-const { state, saveState } = useSingleFileAuthState(`./qr.json`)
-const { Message, Image, Video, String } = require('./lib/');
+const { default: makeWASocket, useSingleFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore } = require("@adiwajshing/baileys")
+const { Boom } = require("@hapi/boom");
+const { state, saveState } = useSingleFileAuthState('./session.json')
+const MAIN_LOGGER = require("@adiwajshing/baileys/lib/Utils/logger").default
+const logger = MAIN_LOGGER.child({})
+logger.level = 'silent'
+const config = require('./config');
+const pino = require ('pino'); 
+const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) }) 
+const fs = require("fs");
+const path = require("path");
+const events = require("./utilsl");
+const {Message, Image, Video} = require('./lib/');
 const { DataTypes } = require('sequelize');
-const { axios } = require('axios');
-const { got } = require('got');
-
-let { getString } = require('./plugins/lib/language');
-let Lang = getString('updater');
-
-// Sql
+const { GreetingsDB, getMessage } = require("./plugins/sql/greetings");
+const got = require('got');
 
 fs.readdirSync('./plugins/sql/').forEach(plugin => {
     if(path.extname(plugin).toLowerCase() == '.js') {
@@ -23,17 +21,15 @@ fs.readdirSync('./plugins/sql/').forEach(plugin => {
     }
 });
 
-const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) })
-
 const plugindb = require('./plugins/sql/plugin');
 
-// Yalnızca bir kolaylık. https://stackoverflow.com/questions/4974238/javascript-equivalent-of-pythons-format-function //
 String.prototype.format = function () {
     var i = 0, args = arguments;
     return this.replace(/{}/g, function () {
       return typeof args[i] != 'undefined' ? args[i++] : '';
-   });
+    });
 };
+
 if (!Date.now) {
     Date.now = function() { return new Date().getTime(); }
 }
@@ -49,102 +45,60 @@ Array.prototype.remove = function() {
     return this;
 };
 
-async function bot () {
-    const bot = WAConnection({
-        logger: pino({ level: 'silent' }),
-        printQRInTerminal: true,
-        browser: ['Abu','Safari','1.0.0'],
-        auth: state
-    });
-    
-    conn.logger.level = config.DEBUG ? 'debug' : 'warn';
-    var nodb;   
-    nodb = true;
+const startSock = async () => {
+     await config.DATABASE.sync();
+     console.log('DB syncing');
+     console.log('Wa-Bot Connecting to whatsapp');
 
-
-        conn.on('connection.update', async (update) => {
-        const { connection, lastDisconnect } = update	    
-        if (connection === 'close') {
-        let reason = new Boom(lastDisconnect?.error)?.output.statusCode
-            if (reason === DisconnectReason.badSession) { console.log(`Bad Session File, Please Delete Session and Scan Again`); bot.logout(); }
-            else if (reason === DisconnectReason.connectionClosed) { console.log("Connection closed, reconnecting...."); startbot(); }
-            else if (reason === DisconnectReason.connectionLost) { console.log("Connection Lost from Server, reconnecting..."); startbot(); }
-            else if (reason === DisconnectReason.connectionReplaced) { console.log("Connection Replaced, Another New Session Opened, Please Close Current Session First"); bot.logout(); }
-            else if (reason === DisconnectReason.loggedOut) { console.log(`Device Logged Out, Please Scan Again And Run.`); bot.logout(); }
-            else if (reason === DisconnectReason.restartRequired) { console.log("Restart Required, Restarting..."); startbot(); }
-            else if (reason === DisconnectReason.timedOut) { console.log("Connection TimedOut, Reconnecting..."); startbot(); }
-            else bot.end(`Unknown DisconnectReason: ${reason}|${connection}`)
-        }
-        console.log(
-            chalk.green.bold('session restored ✅ !')
-        );
-        console.log('Connected...', update)
-    })
-
-    conn.on('creds.update', saveState)
-    
-
-    conn.on('open', async () => {
-        console.log(
-            chalk.green.bold('✅ Login successful!')
-        );
-        await config.DATABASE.sync();
-     console.log(
-            chalk.green.bold('✅ Db System successful!')
-        );
-
-        console.log(
-            chalk.blueBright.italic('⬇️Installing plugins...')
-        );
-
-        fs.readdirSync('./plugins').forEach(plugin => {
+    const { version } = await fetchLatestBaileysVersion()
+    const sock = makeWASocket({ logger, version, printQRInTerminal: false, auth: state })
+    console.log('Bot connected.✅️ To Whatsapp...');
+    store.bind(sock.ev)
+              
+  console.log('⬇️ Installing external plugins...');
+    var plugins = await plugindb.PluginDB.findAll();
+        plugins.map(async (plugin) => {
+            if (!fs.existsSync('./plugins/' + plugin.dataValues.name + '.js')) {
+                console.log(plugin.dataValues.name);
+                var response = await got(plugin.dataValues.url);
+                if (response.statusCode == 200) {
+                    fs.writeFileSync('./plugins/' + plugin.dataValues.name + '.js', response.body);
+                    require('./plugins/' + plugin.dataValues.name + '.js');
+                }     
+            }
+        });
+          fs.readdirSync('./plugins').forEach(plugin => {
             if(path.extname(plugin).toLowerCase() == '.js') {
                 require('./plugins/' + plugin);
             }
         });
 
-        console.log(
-            chalk.green.bold('Bot started✅'));
-          // thanks to afnanplk
-	    if (config.LANG == 'EN' || config.LANG == 'ML') {
-                await git.fetch();
-                var commits = await git.log([config.BRANCH + '..origin/' + config.BRANCH]);
-                if (commits.total === 0) {
-                    await conn.sendMessage(conn.user.jid,Lang.UPDATE, MessageType.text);    
-                } else {
-                    var degisiklikler = Lang.NEW_UPDATE;
-                    commits['all'].map(
-                        (commit) => {
-                            degisiklikler += '🔸 [' + commit.date.substring(0, 10) + ']: ' + commit.message + ' <' + commit.author_name + '>\n';
-                        }
-                    );
-                    await conn.sendMessage(
-                        conn.user.jid,
-                        '*🌟ABU MD UPDATE🌟*' + degisiklikler + '```', MessageType.text
-                    ); 
-                } 
-          }
-    });    
-    conn.on('chat-update', async m => {
-        if (!m.hasNewMessage) return;
-        if (!m.messages && !m.count) return;
-        let msg = m.messages.all()[0];
+        console.log('✅ Plugins installed!')
+      
+         console.log('Bot working...');
+          await sock.sendMessage(sock.user.id, { text: `*Wa-Bot-Md Working*` });
+             }
+    
+        sock.ev.on('message-new', async msg => {
         if (msg.key && msg.key.remoteJid == 'status@broadcast') return;
-
         if (config.NO_ONLINE) {
-            await conn.updatePresence(msg.key.remoteJid, Presence.unavailable);
+            await sock.updatePresence(messages.key.remoteJid, Presence.unavailable);
         }
 
-      // Thanks to farhan dqz, souravl11, afnanplk            
-	    if (config.BLOCKCHAT !== false) {     
-        var abc = config.BLOCKCHAT.split(',');                            
-        if(msg.key.remoteJid.includes('g.us') ? abc.includes(msg.key.remoteJid.split('@')[0]) : abc.includes(msg.participant ? msg.participant.split('@')[0] : msg.key.remoteJid.split('@')[0])) return ;
-    }
-    if (config.SUPPORT == '919074309534-1632403322') {     
-        var sup = config.SUPPORT.split(',');                            
-        if(msg.key.remoteJid.includes('g.us') ? sup.includes(msg.key.remoteJid.split('@')[0]) : sup.includes(msg.participant ? msg.participant.split('@')[0] : msg.key.remoteJid.split('@')[0])) return ;
-    }         
-
+        if (messages.messageStubType === 32 || messages.messageStubType === 28) {
+            var gb = await getMessage(messages.key.remoteJid, 'goodbye');
+            if (gb !== false) {
+                await sock.sendMessage(messages.key.remoteJid, gb.message, MessageType.text);
+            }
+            return;
+        } else if (messages.messageStubType === 27 || messages.messageStubType === 31) {
+            var gb = await getMessage(messages.key.remoteJid);
+            if (gb !== false) {
+                await sock.sendMessage(messages.key.remoteJid, gb.message, MessageType.text);
+            }
+            return;
+        }
+   
         events.commands.map(
             async (command) =>  {
                 if (msg.message && msg.message.imageMessage && msg.message.imageMessage.caption) {
@@ -159,74 +113,83 @@ async function bot () {
 
                 if ((command.on !== undefined && (command.on === 'image' || command.on === 'photo')
                     && msg.message && msg.message.imageMessage !== null && 
-                    (command.pattern === undefined || (command.pattern !== undefined && 
-                        command.pattern.test(text_msg)))) || 
+                    (command.pattern === undefined || (command.pattern !== undefined && 
+                        command.pattern.test(text_msg)))) || 
                     (command.pattern !== undefined && command.pattern.test(text_msg)) || 
                     (command.on !== undefined && command.on === 'text' && text_msg) ||
                     // Video
                     (command.on !== undefined && (command.on === 'video')
                     && msg.message && msg.message.videoMessage !== null && 
-                    (command.pattern === undefined || (command.pattern !== undefined && 
+                    (command.pattern === undefined || (command.pattern !== undefined && 
                         command.pattern.test(text_msg))))) {
-
+    
                     let sendMsg = false;
-                    var chat = conn.chats.get(msg.key.remoteJid)
+                    var chat = sock.chats.get(msg.key.remoteJid)
                         
                     if ((config.SUDO !== false && msg.key.fromMe === false && command.fromMe === true &&
                         (msg.participant && config.SUDO.includes(',') ? config.SUDO.split(',').includes(msg.participant.split('@')[0]) : msg.participant.split('@')[0] == config.SUDO || config.SUDO.includes(',') ? config.SUDO.split(',').includes(msg.key.remoteJid.split('@')[0]) : msg.key.remoteJid.split('@')[0] == config.SUDO)
-                    ) || command.fromMe === msg.key.fromMe || (command.fromMe === false && !msg.key.fromMe)) {
+                    ) || command.fromMe === msg.key.fromMe || (command.fromMe === false && !msg.key.fromMe)) {
                         if (command.onlyPinned && chat.pin === undefined) return;
-                        if (!command.onlyPm === chat.jid.includes('g.us')) sendMsg = true;
-                        else if (command.onlyGroup === chat.jid.includes('g.us')) sendMsg = true;
+                        if (!command.onlyPm === chat.jid.includes('-')) sendMsg = true;
+                        else if (command.onlyGroup === chat.jid.includes('-')) sendMsg = true;
                     }
-  
+    
                     if (sendMsg) {
                         if (config.SEND_READ && command.on === undefined) {
-                            await conn.chatRead(msg.key.remoteJid);
+                            await sock.chatRead(msg.key.remoteJid);
                         }
-                       
                         var match = text_msg.match(command.pattern);
                         
                         if (command.on !== undefined && (command.on === 'image' || command.on === 'photo' )
                         && msg.message.imageMessage !== null) {
-                            whats = new Image(conn, msg);
+                            whats = new Image(sock, msg);
                         } else if (command.on !== undefined && (command.on === 'video' )
                         && msg.message.videoMessage !== null) {
-                            whats = new Video(conn, msg);
+                            whats = new Video(sock, msg);
                         } else {
-                            whats = new Message(conn, msg);
+                            whats = new Message(sock, msg);
                         }
 
-                        try {
-                            await command.function(whats, match);
-                        } catch (error) {
-                            if (config.NOLOG === 'off') {
-                                
-                                await conn.sendMessage(conn.user.jid, '*~_________~ BILIE ~______~*' +
-                                    '\n*🌀 Subcribe this channel other wise chance to get erorr: https://BIHJ72bbMNx49Z9DTA*' +
-                                    '\n\n*⚠️ ' + error + '*\n'
-                                    , MessageType.text);
+                        if (command.deleteCommand && msg.key.fromMe) {
+                            await whats.delete(); 
+                        }
+
+                        var match = text_msg.match(command.pattern);
+                        
+                        if (command.on !== undefined && (command.on === 'image' || command.on === 'photo' )
+                        && msg.message.imageMessage !== null) {
+                            whats = new Image(sock, msg);
+                        } else if (command.on !== undefined && (command.on === 'video' )
+                        && msg.message.videoMessage !== null) {
+                            whats = new Video(sock, msg);
+                        } else {
+                            whats = new Message(sock, msg);
+                        }
+
+                        if (command.deleteCommand && msg.key.fromMe) {
+                            await whats.delete();
                             }
-                        }
-                    }
-                }
-            }
-        )
-    });
+                       }
+                  }
+              }
+         )
+       sock.ev.on('connection.update', async(update) => {
+        const { connection, lastDisconnect } = update     
+        if (connection !== "close") return
 
-    try {
-        await conn.connect();
-    } catch {
-        if (!nodb) {
-            console.log(chalk.red.bold('Eski sürüm stringiniz yenileniyor...'))
-            //conn.loadAuthInfo(Session.deCrypt(config.SESSION)); 
-            try {
-                await conn.connect();
-            } catch {
-                return;
-            }
-        }
-    }
-}
+        let reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
 
-bot();
+        const DR = DisconnectReason
+
+        if (reason === DR.badSession) { console.log(`Corrupted section. Delete old session and scan the QR code.`); sock.logout(); return }
+        if (reason === DR.connectionClosed) { console.log("Connection closed. Reconnecting..."); startSock(); return }
+        if (reason === DR.connectionLost) { console.log("Lost connection to the server. Trying to reconnect..."); startSock(); return }
+        if (reason === DR.connectionReplaced) { console.log("Current session replaced by the new one opened. Please close this session first."); sock.logout(); return }
+        if (reason === DR.loggedOut) { console.log(`Session terminated by cell phone. Delete session and scan the QR code.`); sock.logout(); return }
+        if (reason === DR.restartRequired) { console.log("Kingdom needed. restarting..."); startSock(); return }
+        if (reason === DR.timedOut) { console.log("Connection timed out, Reconnecting..."); startSock(); return }
+       })
+        sock.end(`Disconnected: ${reason}|${lastDisconnect.error}`)
+    sock.ev.on('creds.update', saveState)
+})
+startSock()
