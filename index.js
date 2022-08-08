@@ -12,7 +12,6 @@ const path = require("path");
 const events = require("./utils");
 const {Message, Image, Video} = require('./lib/');
 const { DataTypes } = require('sequelize');
-const { GreetingsDB, getMessage } = require("./plugins/sql/greetings");
 const got = require('got');
 
 fs.readdirSync('./plugins/sql/').forEach(plugin => {
