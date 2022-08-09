@@ -1,10 +1,9 @@
-const bot = require('../util');
+const abu = require('../util');
 const { MessageType } = require('@adiwajshing/baileys');
 const w = require('../config');
 const v = w.SUPPORT2
 const {upload} = require('abu-bot');
-bot
-({pattern: 'url ?(.*)', fromMe: a, desc:'Uploads image to imgur.com'}, (async (m, match) => { 
+abu.bot({pattern: 'url ?(.*)', fromMe: a, desc:'Uploads image to imgur.com'}, (async (m, match) => { 
 if (!m.reply_message.image && !m.reply_message.video ) return;
 var q = await m.client.downloadAndSaveMediaMessage({key: {remoteJid: m.reply_message.jid,id: m.reply_message.id},message: m.reply_message.data.quotedMessage});
 var res = await upload(q,v)
