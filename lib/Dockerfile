@@ -1,8 +1,9 @@
-FROM quay.io/lyfe00011/test:beta
+FROM fusuf/whatsasena:latest
 
-RUN git clone https://github.com/nijin-husni/Maalutty_V2 /root/WhatsAsenaDuplicated
-WORKDIR /root/WhatsAsenaDuplicated/
-RUN yarn install --no-audit
-RUN git clone https://github.com/nijin-husni/uploads
-RUN cp -R /root/Utils/* /root/WhatsAsenaDuplicated 
-CMD ["node", "bot.js"]
+RUN git clone https://github.com/Afx-Abu/Bilie /Jsl/Abu
+WORKDIR /Jsl/Abu
+ENV TZ=Asia/Kolkata
+RUN npm install supervisor -g
+RUN yarn install --ignore-engines
+
+CMD ["node", "index.js"]
