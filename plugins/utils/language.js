@@ -7,13 +7,13 @@ if (fs.existsSync('./plugins/utils/language/' + Config.LANG + '.json')) {
         chalk.green.bold('BILIE ' + Config.VERSION + '...')
     );
 
-    var json = JSON.parse(fs.readFileSync('./plugins/utilslanguage/' + Config. + '.json'));
+    var json = JSON.parse(fs.readFileSync('./plugins/utils/language/' + Config. + '.json'));
 } else {
     console.log(
         chalk.red.bold('You entered an invalid language. English language was chosen.')
     );
 
-    var json = JSON.parse(fs.readFileSync('./plugins/utilslanguage/EN.json'));
+    var json = JSON.parse(fs.readFileSync('./plugins/utils/language/EN.json'));
 }
 
 function getString(file) {
